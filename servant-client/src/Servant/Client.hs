@@ -22,6 +22,7 @@ module Servant.Client
   , ClientM
   , mkAuthenticateReq
   , ServantError(..)
+  , staticClient
   , module Servant.Common.BaseUrl
   ) where
 
@@ -43,6 +44,7 @@ import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
+import           Servant.Utils.Enter
 
 -- * Accessing APIs as a Client
 
@@ -59,6 +61,24 @@ import           Servant.Common.Req
 -- > (getAllBooks :<|> postNewBook) = client myApi
 client :: HasClient layout => Proxy layout -> Client layout
 client p = clientWithRoute p defReq
+
+-- | 'staticClient' allows you to provide a static argument to given 'Client layout'
+--
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book -- POST /books
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
+-- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
+-- > (getAllBooks :<|> postNewBook) = client myApi
+-- >
+-- > getAllBooks' :: Manager -> ClientM [Book]
+-- > postNewBook' :: Book -> Manager -> ClientM Book
+-- > (getAllBooks' :<|> postNewBook') = staticClient (BaseUrl Http "localhost" 8080 "/") myApi
+staticClient :: (Enter (Client layout) BaseUrl ret, HasClient layout) => BaseUrl -> Proxy layout -> ret
+staticClient b = enter b . client
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly

@@ -10,8 +10,8 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
-{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -23,28 +23,31 @@
 module Servant.ClientSpec where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
+import           Control.Applicative                        ((<$>))
 #endif
-import           Control.Arrow              (left)
-import           Control.Concurrent         (forkIO, killThread, ThreadId)
-import           Control.Exception          (bracket)
-import           Control.Monad.Trans.Except (ExceptT, throwE, runExceptT)
+import           Control.Arrow                              (left)
+import           Control.Concurrent                         (ThreadId, forkIO,
+                                                             killThread)
+import           Control.Exception                          (bracket)
+import           Control.Monad.Trans.Except                 (runExceptT, throwE)
 import           Data.Aeson
-import qualified Data.ByteString.Lazy       as BS
-import           Data.Char                  (chr, isPrint)
-import           Data.Foldable              (forM_)
-import           Data.Monoid                hiding (getLast)
+import qualified Data.ByteString.Lazy                       as BS
+import           Data.Char                                  (chr, isPrint)
+import           Data.Foldable                              (forM_)
+import           Data.Monoid                                hiding (getLast)
 import           Data.Proxy
-import qualified Data.Text                  as T
-import           GHC.Generics               (Generic)
-import qualified Network.HTTP.Client        as C
+import qualified Data.Text                                  as T
+import           GHC.Generics                               (Generic)
+import qualified Network.HTTP.Client                        as C
 import           Network.HTTP.Media
-import qualified Network.HTTP.Types         as HTTP
+import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
-import           Network.Wai                (Application, Request,
-                                             requestHeaders, responseLBS)
+import           Network.Wai                                (Application,
+                                                             Request,
+                                                             requestHeaders,
+                                                             responseLBS)
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe           (unsafePerformIO)
+import           System.IO.Unsafe                           (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
@@ -53,9 +56,9 @@ import           Test.QuickCheck
 import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
+import qualified Servant.Common.Req                         as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
-import qualified Servant.Common.Req         as SCR
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPI
@@ -72,7 +75,7 @@ spec = describe "Servant.Client" $ do
 
 data Person = Person {
   name :: String,
-  age :: Integer
+  age  :: Integer
  }
   deriving (Eq, Show, Generic)
 
@@ -296,6 +299,22 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             return $
               result === Right (cap, num, flag, body)
 
+    describe "staticClient" $ do
+      it "allows to pass in the BaseUrl to staticClient" $ \(_, baseUrl) -> do
+        let
+            (getGet'  :: C.Manager -> ClientM Person)
+              :<|> (_ ::  C.Manager -> SCR.ClientM NoContent)
+              :<|> (_ ::  String -> C.Manager ->  SCR.ClientM Person)
+              :<|> (_ ::  Person -> C.Manager ->  SCR.ClientM Person)
+              :<|> (_ ::  Maybe String -> C.Manager ->  SCR.ClientM Person)
+              :<|> (_ ::  [String] -> C.Manager ->  SCR.ClientM [Person])
+              :<|> (_ ::  Bool -> C.Manager ->  SCR.ClientM Bool)
+              :<|> (_ ::  HTTP.Method -> C.Manager -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString))
+              :<|> (_ ::  HTTP.Method -> C.Manager -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString))
+              :<|> (_ ::  String -> Maybe Int -> Bool -> [(String, [Rational])] -> C.Manager -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])]))
+              :<|> (_ ::  C.Manager -> SCR.ClientM (Headers TestHeaders Bool))
+              :<|> (_ ::  C.Manager -> SCR.ClientM NoContent) = staticClient baseUrl api
+        (left show <$> runExceptT (getGet' manager)) `shouldReturn` Right alice
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
