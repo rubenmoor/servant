@@ -39,6 +39,9 @@ instance ( Enter typ1 arg1 ret1, Enter typ2 arg2 ret2
 instance (Enter b arg ret) => Enter (a -> b) arg (a -> ret) where
     enter arg f a = enter arg (f a)
 
+instance Enter (arg -> ret) arg ret where
+    enter arg f = f arg
+
 -- ** Useful instances
 
 -- | A natural transformation from @m@ to @n@. Used to `enter` particular
