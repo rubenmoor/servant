@@ -46,7 +46,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens
+import           Control.Lens ((^.))
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid
@@ -179,8 +179,8 @@ paramToStr qarg notTheEnd =
            <> "=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"
-    Flag -> name <> "="
-    Servant.Foreign.List -> name
+    Flag   -> name <> "="
+    List   -> name
            <> "[]=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"

@@ -7,7 +7,8 @@
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import           Control.Lens hiding (cons)
+import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
+                               (.~))
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
 #endif
@@ -255,7 +256,7 @@ instance
   type Foreign ftype (QueryParams sym a :> sublayout) = Foreign ftype sublayout
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy sublayout) $
-      req & reqUrl.queryStr <>~ [QueryArg arg Servant.Foreign.Internal.List]
+      req & reqUrl.queryStr <>~ [QueryArg arg List]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
