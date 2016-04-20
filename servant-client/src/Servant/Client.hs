@@ -77,7 +77,7 @@ client p = clientWithRoute p defReq
 -- > getAllBooks' :: Manager -> ClientM [Book]
 -- > postNewBook' :: Book -> Manager -> ClientM Book
 -- > (getAllBooks' :<|> postNewBook') = staticClient (BaseUrl Http "localhost" 8080 "/") myApi
-staticClient :: (Enter (Client layout) BaseUrl ret, HasClient layout) => BaseUrl -> Proxy layout -> ret
+staticClient :: (Enter (Client layout) arg ret, HasClient layout) => arg -> Proxy layout -> ret
 staticClient b = enter b . client
 
 -- | This class lets us define how each API combinator
